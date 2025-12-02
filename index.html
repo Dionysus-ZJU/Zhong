@@ -3,10 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的网站</title>
+  <title>个人任务管理</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .add-section {
+      margin-bottom: 25px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .add-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .add-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .add-btn:active {
+      transform: translateY(0);
+    }
+
+    .form-container {
+      display: none;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+    }
+
+    .form-container.active {
+      display: block;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .form-group input {
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    thead {
+      background: #f8f9fa;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      color: #555;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+    tbody tr {
+      transition: background-color 0.2s;
+    }
+
+    tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .delete-btn {
+      background: #ff4757;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .delete-btn:hover {
+      background: #ff3838;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      th, td {
+        padding: 10px 8px;
+        font-size: 13px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>🎉 欢迎来到 xubeihappy.site！</h1>
-  <p>这是我的第一个网页，部署成功！</p>
+  <div class="container">
+    <div class="header">
+      <h1>个人任务管理</h1>
+      <p>管理您的重要事项和截止时间</p>
+    </div>
+    <div class="content">
+      <div class="add-section">
+        <button class="add-btn" onclick="toggleForm()">
+          <span>+</span>
+          <span>添加任务</span>
+        </button>
+      </div>
+
+      <div class="form-container" id="taskForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="event">事件 *</label>
+            <input type="text" id="event" placeholder="请输入事件名称" required>
+          </div>
+          <div class="form-group">
+            <label for="target">面向对象 *</label>
+            <input type="text" id="target" placeholder="请输入面向对象" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="deadline">截止时间 *</label>
+            <input type="date" id="deadline" required>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="cancelForm()">取消</button>
+          <button class="btn btn-primary" onclick="addTask()">确认添加</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="taskTable">
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>事件</th>
+              <th>面向对象</th>
+              <th>截止时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody">
+            <!-- 任务列表将在这里动态生成 -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <p>暂无任务，点击上方按钮添加新任务</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 从localStorage加载任务
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    // 页面加载时渲染表格
+    window.onload = function() {
+      renderTable();
+    };
+
+    // 切换表单显示/隐藏
+    function toggleForm() {
+      const form = document.getElementById('taskForm');
+      form.classList.toggle('active');
+      if (form.classList.contains('active')) {
+        // 重置表单
+        document.getElementById('event').value = '';
+        document.getElementById('target').value = '';
+        document.getElementById('deadline').value = '';
+      }
+    }
+
+    // 取消表单
+    function cancelForm() {
+      document.getElementById('taskForm').classList.remove('active');
+    }
+
+    // 添加任务
+    function addTask() {
+      const event = document.getElementById('event').value.trim();
+      const target = document.getElementById('target').value.trim();
+      const deadline = document.getElementById('deadline').value;
+
+      if (!event || !target || !deadline) {
+        alert('请填写所有必填项');
+        return;
+      }
+
+      // 检查日期格式并转换为 YYYY.MM.DD 格式
+      const dateObj = new Date(deadline);
+      const formattedDate = formatDate(dateObj);
+
+      const newTask = {
+        id: Date.now(),
+        event: event,
+        target: target,
+        deadline: formattedDate,
+        deadlineRaw: deadline // 保存原始日期用于排序
+      };
+
+      tasks.push(newTask);
+      saveTasks();
+      renderTable();
+      cancelForm();
+    }
+
+    // 删除任务
+    function deleteTask(id) {
+      if (confirm('确定要删除这个任务吗？')) {
+        tasks = tasks.filter(task => task.id !== id);
+        saveTasks();
+        renderTable();
+      }
+    }
+
+    // 保存任务到localStorage
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // 渲染表格
+    function renderTable() {
+      const tbody = document.getElementById('taskTableBody');
+      const emptyState = document.getElementById('emptyState');
+      
+      // 获取当前日期（只比较日期部分，不考虑时间）
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 过滤掉已过期的任务，并按截止时间从近到远排序
+      const validTasks = tasks
+        .filter(task => {
+          const taskDate = new Date(task.deadlineRaw);
+          taskDate.setHours(0, 0, 0, 0);
+          return taskDate >= today;
+        })
+        .sort((a, b) => {
+          const dateA = new Date(a.deadlineRaw);
+          const dateB = new Date(b.deadlineRaw);
+          return dateA - dateB;
+        });
+
+      if (validTasks.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tbody.innerHTML = validTasks.map((task, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(task.event)}</td>
+          <td>${escapeHtml(task.target)}</td>
+          <td>${task.deadline}</td>
+          <td>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">删除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 格式化日期为 YYYY.MM.DD
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}.${month}.${day}`;
+    }
+
+    // HTML转义，防止XSS攻击
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
 </body>
 </html>
