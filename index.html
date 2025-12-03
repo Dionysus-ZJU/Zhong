@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>个人任务管理</title>
+  <title>任务管理</title>
   <style>
     * {
       margin: 0;
@@ -364,13 +364,69 @@
 
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
+      padding: 40px 20px;
       color: #999;
     }
 
     .empty-state p {
-      font-size: 16px;
+      font-size: 14px;
       margin-top: 10px;
+    }
+
+    .status-section-wrapper {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .status-section {
+      border-radius: 12px;
+      border: 1px solid #f0f0f0;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .status-section-header {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-section-header.in-progress {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-section-header.not-started {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .status-section-header.ended {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .status-count {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .status-section table {
+      border-radius: 0;
+    }
+
+    .link-like {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      color: #3366cc;
+      text-decoration: underline;
+      cursor: pointer;
     }
 
     @media (max-width: 768px) {
@@ -397,6 +453,10 @@
         flex-wrap: wrap;
         justify-content: flex-start;
       }
+
+      .status-section-wrapper {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -404,12 +464,11 @@
   <div class="container">
     <div class="header">
       <div class="header-title">
-        <h1>个人任务管理</h1>
-        <p>管理您的重要事项和时间安排</p>
+        <h1>任务管理</h1>
       </div>
       <div class="auth-panel">
         <span class="auth-status" id="authStatus">当前状态：未登录</span>
-        <input class="auth-input" type="text" id="username" placeholder="账号">
+        <input class="auth-input" type="password" id="username" placeholder="账号">
         <input class="auth-input" type="password" id="password" placeholder="密码">
         <button class="auth-btn" id="loginBtn" onclick="handleAuth()">登录</button>
       </div>
@@ -418,20 +477,44 @@
       <div class="add-section">
         <button class="add-btn" id="addTaskBtn" onclick="toggleForm()">
           <span>+</span>
-          <span>添加任务</span>
+          <span>添加事项</span>
         </button>
-        <span class="add-hint" id="addHint">只有管理员登录后才可以添加、修改和删除任务</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-secondary" id="importBtn" onclick="triggerImport()" style="padding:8px 14px;">导入事项</button>
+          <button class="btn btn-secondary" id="exportBtn" onclick="exportTasks()" style="padding:8px 14px;">导出事项</button>
+          <span class="add-hint" id="addHint">只有管理员登录后才可以添加、修改和删除事项</span>
+        </div>
+        <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleImport(event)">
       </div>
 
       <div class="form-container" id="taskForm">
         <div class="form-row">
           <div class="form-group">
-            <label for="event">事件 *</label>
-            <input type="text" id="event" placeholder="请输入事件名称" required>
+            <label for="event">事项 *</label>
+            <input type="text" id="event" placeholder="请输入事项名称" required>
           </div>
           <div class="form-group">
             <label for="target">面向对象 *</label>
-            <input type="text" id="target" placeholder="请输入面向对象" required>
+            <select id="target" class="form-control">
+              <option value="ALL">ALL</option>
+              <option value="2025级">2025级</option>
+              <option value="2024级">2024级</option>
+              <option value="2023级">2023级</option>
+              <option value="2022级">2022级</option>
+              <option value="2021级">2021级</option>
+              <option value="2020级">2020级</option>
+              <option value="2025届毕业生">2025届毕业生</option>
+              <option value="2026届毕业生">2026届毕业生</option>
+              <option value="2027届毕业生">2027届毕业生</option>
+              <option value="2028届毕业生">2028届毕业生</option>
+              <option value="2029届毕业生">2029届毕业生</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="detail">详情</label>
+            <input type="text" id="detail" placeholder="可填写补充说明、地点、重要备注等">
           </div>
         </div>
         <div class="form-row">
@@ -440,21 +523,21 @@
             <div class="time-type-toggle">
               <label>
                 <input type="radio" name="timeType" value="activity" checked onchange="switchTimeType()">
-                活动时间（包含开始和结束）
+                活动日期（包含开始时间和结束时间）
               </label>
               <label>
                 <input type="radio" name="timeType" value="deadline" onchange="switchTimeType()">
-                截止日期（只设置一个截止时间）
+                截止日期（只有截止时间）
               </label>
             </div>
-            <div class="hint-text">在“活动时间”和“截止日期”中二选一进行设置。</div>
+            <div class="hint-text">在“活动日期”和“截止日期”中二选一进行设置。</div>
           </div>
         </div>
 
         <!-- 活动时间设置 -->
         <div class="form-row" id="activityTimeRow">
           <div class="form-group full-width">
-            <label>活动时间 *</label>
+            <label>活动时间</label>
             <div class="time-row">
               <div class="form-group">
                 <label for="activityDate">活动日期</label>
@@ -469,14 +552,14 @@
                 <input type="time" id="activityEndTime">
               </div>
             </div>
-            <div class="hint-text">示例：2025-12-02，开始 10:00，结束 12:00。</div>
+            <div class="hint-text">示例：2025年1月日，开始 14:00，结束 16:00。</div>
           </div>
         </div>
 
         <!-- 截止日期设置 -->
         <div class="form-row" id="deadlineRow" style="display: none;">
           <div class="form-group full-width">
-            <label>截止日期 *</label>
+            <label>截止日期</label>
             <div class="time-row">
               <div class="form-group">
                 <label for="deadlineDate">截止日期</label>
@@ -486,42 +569,85 @@
                 <label for="deadlineTime">截止时间（小时:分钟）</label>
                 <input type="time" id="deadlineTime">
               </div>
-              <div class="form-group">
-                <span class="muted">只设置一个最终截止时间</span>
-              </div>
             </div>
           </div>
         </div>
         <div class="form-actions">
           <button class="btn btn-secondary" onclick="cancelForm()">取消</button>
-          <button class="btn btn-primary" id="submitBtn" onclick="submitTask()">确认添加</button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitTask()">确认</button>
         </div>
       </div>
 
       <div class="table-container">
-        <table id="taskTable">
-          <thead>
-            <tr>
-              <th>序号</th>
-              <th>事件</th>
-              <th>面向对象</th>
-              <th>时间类型</th>
-              <th>时间详情</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="taskTableBody">
-            <!-- 任务列表将在这里动态生成 -->
-          </tbody>
-        </table>
+        <div class="status-section-wrapper" id="statusWrapper">
+          <div class="status-section" id="sectionInProgress">
+            <div class="status-section-header in-progress">
+              <span>进行中</span>
+              <span class="status-count" id="countInProgress"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyInProgress"></tbody>
+            </table>
+          </div>
+
+          <div class="status-section" id="sectionNotStarted">
+            <div class="status-section-header not-started">
+              <span>未开始</span>
+              <span class="status-count" id="countNotStarted"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyNotStarted"></tbody>
+            </table>
+          </div>
+
+          <div class="status-section" id="sectionEnded">
+            <div class="status-section-header ended">
+              <span>已截止</span>
+              <span class="status-count" id="countEnded"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyEnded"></tbody>
+            </table>
+          </div>
+        </div>
         <div class="empty-state" id="emptyState" style="display: none;">
-          <p>暂无任务，点击上方按钮添加新任务</p>
+          <p>暂无事项，点击上方按钮添加事项</p>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     // ==== 登录相关 ====
     const ADMIN_USERNAME = 'zjdx';
@@ -576,12 +702,12 @@
         authStatus.textContent = '当前状态：已登录（管理员）';
         loginBtn.textContent = '退出登录';
         addTaskBtn.disabled = false;
-        addHint.textContent = '已登录管理员，可以添加、修改和删除任务。';
+        addHint.textContent = '已登录管理员，可以添加、修改和删除事项。';
       } else {
         authStatus.textContent = '当前状态：未登录';
         loginBtn.textContent = '登录';
         addTaskBtn.disabled = true;
-        addHint.textContent = '只有管理员登录后才可以添加、修改和删除任务。当前为只读查看模式。';
+        addHint.textContent = '只有管理员登录后才可以添加、修改和删除事项。当前为只读查看模式。';
       }
     }
 
@@ -608,19 +734,20 @@
     function cancelForm() {
       document.getElementById('taskForm').classList.remove('active');
       editingTaskId = null;
-      document.getElementById('submitBtn').textContent = '确认添加';
+      document.getElementById('submitBtn').textContent = '确认';
     }
 
     function resetForm() {
       document.getElementById('event').value = '';
       document.getElementById('target').value = '';
+      document.getElementById('detail').value = '';
       document.getElementById('activityDate').value = '';
       document.getElementById('activityStartTime').value = '';
       document.getElementById('activityEndTime').value = '';
       document.getElementById('deadlineDate').value = '';
       document.getElementById('deadlineTime').value = '';
       editingTaskId = null;
-      document.getElementById('submitBtn').textContent = '确认添加';
+      document.getElementById('submitBtn').textContent = '确认';
 
       // 默认选中活动时间
       document.querySelector('input[name="timeType"][value="activity"]').checked = true;
@@ -646,17 +773,19 @@
       if (!ensureAdmin()) return;
 
       const event = document.getElementById('event').value.trim();
-      const target = document.getElementById('target').value.trim();
+      const target = document.getElementById('target').value;
+      const detail = document.getElementById('detail').value.trim();
       const timeType = document.querySelector('input[name="timeType"]:checked').value;
 
       if (!event || !target) {
-        alert('请填写事件和面向对象');
+        alert('请填写事项和面向对象');
         return;
       }
 
       let taskData = {
         event,
         target,
+        detail,
         timeType
       };
 
@@ -665,33 +794,35 @@
         const activityStartTime = document.getElementById('activityStartTime').value;
         const activityEndTime = document.getElementById('activityEndTime').value;
 
-        if (!activityDate || !activityStartTime || !activityEndTime) {
-          alert('请完整填写活动日期、开始时间和结束时间');
+        if (!activityDate) {
+          alert('请选择活动日期');
           return;
         }
 
-        const startDateTime = new Date(activityDate + 'T' + activityStartTime);
-        const endDateTime = new Date(activityDate + 'T' + activityEndTime);
+        if (activityStartTime && activityEndTime) {
+          const startDateTime = new Date(activityDate + 'T' + activityStartTime);
+          const endDateTime = new Date(activityDate + 'T' + activityEndTime);
 
-        if (endDateTime <= startDateTime) {
-          alert('结束时间必须晚于开始时间');
-          return;
+          if (endDateTime <= startDateTime) {
+            alert('结束时间必须晚于开始时间');
+            return;
+          }
         }
 
         taskData.activityDate = activityDate;
-        taskData.activityStartTime = activityStartTime;
-        taskData.activityEndTime = activityEndTime;
+        taskData.activityStartTime = activityStartTime || '';
+        taskData.activityEndTime = activityEndTime || '';
       } else {
         const deadlineDate = document.getElementById('deadlineDate').value;
         const deadlineTime = document.getElementById('deadlineTime').value;
 
-        if (!deadlineDate || !deadlineTime) {
-          alert('请填写截止日期和截止时间');
+        if (!deadlineDate) {
+          alert('请选择截止日期');
           return;
         }
 
         taskData.deadlineDate = deadlineDate;
-        taskData.deadlineTime = deadlineTime;
+        taskData.deadlineTime = deadlineTime || '';
       }
 
       if (editingTaskId) {
@@ -733,6 +864,7 @@
 
       document.getElementById('event').value = task.event;
       document.getElementById('target').value = task.target;
+      document.getElementById('detail').value = task.detail || '';
 
       if (task.timeType === 'activity') {
         document.querySelector('input[name="timeType"][value="activity"]').checked = true;
@@ -771,54 +903,110 @@
       localStorage.setItem('tasks_v2', JSON.stringify(tasks));
     }
 
-    function getSortKey(task) {
+    function getStartDate(task) {
       if (task.timeType === 'activity') {
-        // 活动按照开始时间排序
-        return new Date(task.activityDate + 'T' + task.activityStartTime).getTime();
+        const date = task.activityDate || '';
+        if (!date) return null;
+        const time = task.activityStartTime || '00:00';
+        return new Date(date + 'T' + time);
       } else {
-        // 截止任务按截止时间排序
-        return new Date(task.deadlineDate + 'T' + task.deadlineTime).getTime();
+        const date = task.deadlineDate || '';
+        if (!date) return null;
+        const time = task.deadlineTime || '00:00';
+        return new Date(date + 'T' + time);
+      }
+    }
+
+    function getEndDate(task) {
+      if (task.timeType === 'activity') {
+        const date = task.activityDate || '';
+        if (!date) return null;
+        const time = task.activityEndTime || task.activityStartTime || '23:59';
+        return new Date(date + 'T' + time);
+      } else {
+        const date = task.deadlineDate || '';
+        if (!date) return null;
+        const time = task.deadlineTime || '23:59';
+        return new Date(date + 'T' + time);
       }
     }
 
     function getStatus(task) {
       const now = new Date();
 
-      if (task.timeType === 'activity') {
-        const start = new Date(task.activityDate + 'T' + task.activityStartTime);
-        const end = new Date(task.activityDate + 'T' + task.activityEndTime);
+      const start = getStartDate(task);
+      const end = getEndDate(task);
 
-        if (now < start) {
-          return '未开始';
-        } else if (now >= start && now <= end) {
-          return '进行中';
-        } else {
-          return '已截止';
-        }
-      } else {
-        const deadline = new Date(task.deadlineDate + 'T' + task.deadlineTime);
-        if (now < deadline) {
-          return '进行中';
-        } else {
-          return '已截止';
-        }
+      if (!start && !end) {
+        return '未开始';
       }
+
+      if (start && now < start) {
+        return '未开始';
+      }
+
+      if (start && end && now >= start && now <= end) {
+        return '进行中';
+      }
+
+      if (!start && end && now <= end) {
+        return '进行中';
+      }
+
+      return '已截止';
+    }
+
+    function formatDateCN(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      const year = parts[0];
+      const month = String(parseInt(parts[1], 10));
+      const day = String(parseInt(parts[2], 10));
+      return `${year}年${month}月${day}日`;
     }
 
     function formatTimeDetail(task) {
       if (task.timeType === 'activity') {
-        return `${task.activityDate} ${task.activityStartTime} - ${task.activityEndTime}`;
+        const datePart = formatDateCN(task.activityDate);
+        const start = task.activityStartTime || '';
+        const end = task.activityEndTime || '';
+        if (start && end) {
+          return `${datePart} ${start} - ${end}`;
+        }
+        if (start && !end) {
+          return `${datePart} ${start}`;
+        }
+        if (!start && end) {
+          return `${datePart} 结束 ${end}`;
+        }
+        return datePart;
       } else {
-        return `${task.deadlineDate} ${task.deadlineTime}`;
+        const datePart = formatDateCN(task.deadlineDate);
+        const time = task.deadlineTime || '';
+        if (time) {
+          return `${datePart} ${time}`;
+        }
+        return datePart;
       }
     }
 
     function renderTable() {
-      const tbody = document.getElementById('taskTableBody');
       const emptyState = document.getElementById('emptyState');
+      const tbodyInProgress = document.getElementById('tbodyInProgress');
+      const tbodyNotStarted = document.getElementById('tbodyNotStarted');
+      const tbodyEnded = document.getElementById('tbodyEnded');
+      const countInProgress = document.getElementById('countInProgress');
+      const countNotStarted = document.getElementById('countNotStarted');
+      const countEnded = document.getElementById('countEnded');
 
       if (!tasks || tasks.length === 0) {
-        tbody.innerHTML = '';
+        tbodyInProgress.innerHTML = '';
+        tbodyNotStarted.innerHTML = '';
+        tbodyEnded.innerHTML = '';
+        countInProgress.textContent = '';
+        countNotStarted.textContent = '';
+        countEnded.textContent = '';
         emptyState.style.display = 'block';
         return;
       }
@@ -834,35 +1022,189 @@
           orderMap[task.id] = index + 1;
         });
 
-      // 显示时按时间从近到远排序
-      const sortedTasks = tasks.slice().sort((a, b) => getSortKey(a) - getSortKey(b));
+      const inProgressTasks = [];
+      const notStartedTasks = [];
+      const endedTasks = [];
 
-      tbody.innerHTML = sortedTasks.map(task => {
+      tasks.forEach(task => {
         const status = getStatus(task);
-        let statusClass = 'status-in-progress';
-        if (status === '未开始') statusClass = 'status-not-started';
-        if (status === '已截止') statusClass = 'status-ended';
+        if (status === '进行中') {
+          inProgressTasks.push(task);
+        } else if (status === '未开始') {
+          notStartedTasks.push(task);
+        } else {
+          endedTasks.push(task);
+        }
+      });
 
-        const timeTypeLabel = task.timeType === 'activity' ? '活动时间' : '截止日期';
-        const actionsDisabledAttr = isAdmin ? '' : 'disabled';
+      // 排序：进行中按截止/活动时间，未开始按开始时间/日期，已截止按序号
+      inProgressTasks.sort((a, b) => {
+        const aEnd = getEndDate(a) || getStartDate(a) || new Date(8640000000000000);
+        const bEnd = getEndDate(b) || getStartDate(b) || new Date(8640000000000000);
+        return aEnd - bEnd;
+      });
 
+      notStartedTasks.sort((a, b) => {
+        const aStart = getStartDate(a) || new Date(8640000000000000);
+        const bStart = getStartDate(b) || new Date(8640000000000000);
+        return aStart - bStart;
+      });
+
+      endedTasks.sort((a, b) => (a.createdAt || a.id) - (b.createdAt || b.id));
+
+      const actionsDisabledAttr = isAdmin ? '' : 'disabled';
+
+      function rowHtml(task) {
+        const timeTypeLabel = task.timeType === 'activity' ? '活动日期' : '截止日期';
         return `
           <tr>
             <td>${orderMap[task.id] || ''}</td>
-            <td>${escapeHtml(task.event)}</td>
+            <td>
+              <button class="link-like" onclick="showTaskDetail(${task.id})">${escapeHtml(task.event)}</button>
+            </td>
             <td>${escapeHtml(task.target)}</td>
             <td>${timeTypeLabel}</td>
             <td>${formatTimeDetail(task)}</td>
-            <td>
-              <span class="status-tag ${statusClass}">${status}</span>
-            </td>
             <td>
               <button class="action-btn edit-btn" onclick="editTask(${task.id})" ${actionsDisabledAttr}>修改</button>
               <button class="action-btn delete-btn" onclick="deleteTask(${task.id})" ${actionsDisabledAttr}>删除</button>
             </td>
           </tr>
         `;
-      }).join('');
+      }
+
+      tbodyInProgress.innerHTML = inProgressTasks.map(rowHtml).join('');
+      tbodyNotStarted.innerHTML = notStartedTasks.map(rowHtml).join('');
+      tbodyEnded.innerHTML = endedTasks.map(rowHtml).join('');
+
+      countInProgress.textContent = inProgressTasks.length ? `共 ${inProgressTasks.length} 条` : '暂无进行中事项';
+      countNotStarted.textContent = notStartedTasks.length ? `共 ${notStartedTasks.length} 条` : '暂无未开始事项';
+      countEnded.textContent = endedTasks.length ? `共 ${endedTasks.length} 条` : '暂无已截止事项';
+    }
+
+    function showTaskDetail(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      const timeTypeLabel = task.timeType === 'activity' ? '活动日期' : '截止日期';
+      const timeText = formatTimeDetail(task);
+
+      const lines = [
+        `事项：${task.event || ''}`,
+        `详情：${task.detail || ''}`,
+        `面向对象：${task.target || ''}`,
+        `时间类型：${timeTypeLabel}`,
+        `时间：${timeText}`
+      ];
+
+      alert(lines.join('\n'));
+    }
+
+    // ==== 导入 / 导出 Excel ====
+    function triggerImport() {
+      if (!ensureAdmin()) return;
+      document.getElementById('importFile').click();
+    }
+
+    function handleImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+          json.forEach(row => {
+            const eventName = row['事项'] || row['事件'] || '';
+            if (!eventName) return;
+
+            const target = row['面向对象'] || 'ALL';
+            const detail = row['详情'] || '';
+            const timeTypeText = row['时间类型'] || '截止日期';
+            const timeType = timeTypeText.includes('活动') ? 'activity' : 'deadline';
+
+            const activityDate = row['活动日期'] || '';
+            const activityStartTime = row['开始时间'] || '';
+            const activityEndTime = row['结束时间'] || '';
+            const deadlineDate = row['截止日期'] || '';
+            const deadlineTime = row['截止时间'] || '';
+
+            const taskData = {
+              event: String(eventName).trim(),
+              target: String(target).trim() || 'ALL',
+              detail: String(detail).trim(),
+              timeType,
+              activityDate: '',
+              activityStartTime: '',
+              activityEndTime: '',
+              deadlineDate: '',
+              deadlineTime: ''
+            };
+
+            if (timeType === 'activity') {
+              taskData.activityDate = activityDate;
+              taskData.activityStartTime = activityStartTime;
+              taskData.activityEndTime = activityEndTime;
+            } else {
+              taskData.deadlineDate = deadlineDate;
+              taskData.deadlineTime = deadlineTime;
+            }
+
+            const newTask = {
+              id: Date.now() + Math.floor(Math.random() * 1000),
+              createdAt: Date.now(),
+              ...taskData
+            };
+            tasks.push(newTask);
+          });
+
+          saveTasks();
+          renderTable();
+          alert('导入完成');
+        } catch (err) {
+          console.error(err);
+          alert('导入失败，请确认 Excel 格式是否正确。');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function exportTasks() {
+      if (!tasks || tasks.length === 0) {
+        alert('当前没有可导出的事项');
+        return;
+      }
+
+      const data = [
+        ['事项', '面向对象', '详情', '时间类型', '活动日期', '开始时间', '结束时间', '截止日期', '截止时间']
+      ];
+
+      tasks.forEach(task => {
+        const row = [
+          task.event || '',
+          task.target || '',
+          task.detail || '',
+          task.timeType === 'activity' ? '活动日期' : '截止日期',
+          task.activityDate || '',
+          task.activityStartTime || '',
+          task.activityEndTime || '',
+          task.deadlineDate || '',
+          task.deadlineTime || ''
+        ];
+        data.push(row);
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '事项列表');
+      XLSX.writeFile(workbook, '事项列表.xlsx');
     }
 
     // HTML转义，防止XSS攻击
