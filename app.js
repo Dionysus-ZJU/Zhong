@@ -130,8 +130,9 @@ async function loadFromGitHub() {
           showSyncStatus('✓ 本地数据已同步到 GitHub', 'success');
           setTimeout(() => hideSyncStatus(), 3000);
         } catch (error) {
-          showSyncStatus('使用本地数据，但同步到 GitHub 失败', 'error');
-          setTimeout(() => hideSyncStatus(), 5000);
+          const errorMsg = error.message || '未知错误';
+          showSyncStatus('使用本地数据，但同步到 GitHub 失败: ' + errorMsg + '（请检查控制台）', 'error');
+          setTimeout(() => hideSyncStatus(), 8000);
         }
       } else {
         showSyncStatus('GitHub 上暂无数据，使用本地数据', 'success');
@@ -160,8 +161,9 @@ async function loadFromGitHub() {
           showSyncStatus('✓ 本地数据已同步到 GitHub', 'success');
           setTimeout(() => hideSyncStatus(), 3000);
         } catch (error) {
-          showSyncStatus('使用本地数据，但同步到 GitHub 失败', 'error');
-          setTimeout(() => hideSyncStatus(), 5000);
+          const errorMsg = error.message || '未知错误';
+          showSyncStatus('使用本地数据，但同步到 GitHub 失败: ' + errorMsg + '（请检查控制台）', 'error');
+          setTimeout(() => hideSyncStatus(), 8000);
         }
         renderTable();
         return;
@@ -184,7 +186,7 @@ async function loadFromGitHub() {
 
 async function saveToGitHub() {
   if (!githubConfig || !githubConfig.githubOwner || !githubConfig.githubRepo) {
-    return;
+    throw new Error('GitHub 配置不完整');
   }
 
   showSyncStatus('正在同步到 GitHub...', 'loading');
@@ -203,7 +205,13 @@ async function saveToGitHub() {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`;
+      console.error('GitHub API 错误详情:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
@@ -213,8 +221,9 @@ async function saveToGitHub() {
     setTimeout(() => hideSyncStatus(), 3000);
   } catch (error) {
     console.error('保存到 GitHub 失败:', error);
-    showSyncStatus('✗ 同步到 GitHub 失败: ' + error.message, 'error');
-    setTimeout(() => hideSyncStatus(), 5000);
+    const errorMsg = error.message || '未知错误';
+    showSyncStatus('✗ 同步到 GitHub 失败: ' + errorMsg + '（请检查控制台获取详细信息）', 'error');
+    setTimeout(() => hideSyncStatus(), 8000);
     throw error;
   }
 }
