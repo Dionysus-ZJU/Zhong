@@ -456,10 +456,8 @@ function getStartDate(task) {
     const time = task.activityStartTime || '00:00';
     return new Date(date + 'T' + time);
   } else {
-    const date = task.deadlineDate || '';
-    if (!date) return null;
-    const time = task.deadlineTime || '00:00';
-    return new Date(date + 'T' + time);
+    // 截止日期类型没有开始日期，返回 null
+    return null;
   }
 }
 
