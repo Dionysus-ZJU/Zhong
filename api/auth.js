@@ -1,5 +1,5 @@
 // Vercel Serverless Function - 验证管理员账号密码
-module.exports = async function handler(req, res) {
+module.exports = async (req, res) => {
   // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
