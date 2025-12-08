@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务管理</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-title">
+        <h1>任务管理</h1>
+      </div>
+      <div class="auth-panel">
+        <span class="auth-status" id="authStatus">当前状态：未登录</span>
+        <input class="auth-input" type="password" id="username" placeholder="账号">
+        <input class="auth-input" type="password" id="password" placeholder="密码">
+        <button class="auth-btn" id="loginBtn" onclick="handleAuth()">登录</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="add-section">
+        <button class="add-btn" id="addTaskBtn" onclick="toggleForm()">
+          <span>+</span>
+          <span>添加事项</span>
+        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-secondary" id="importBtn" onclick="triggerImport()" style="padding:8px 14px;">导入事项</button>
+          <button class="btn btn-secondary" id="exportBtn" onclick="exportTasks()" style="padding:8px 14px;">导出事项</button>
+          <span class="add-hint" id="addHint">只有管理员登录后才可以添加、修改和删除事项</span>
+        </div>
+        <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleImport(event)">
+      </div>
+
+      <div class="form-container" id="taskForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="event">事项 *</label>
+            <input type="text" id="event" placeholder="请输入事项名称" required>
+          </div>
+          <div class="form-group">
+            <label for="target">面向对象 *</label>
+            <select id="target">
+              <option value="ALL">ALL</option>
+              <option value="2025级">2025级</option>
+              <option value="2024级">2024级</option>
+              <option value="2023级">2023级</option>
+              <option value="2022级">2022级</option>
+              <option value="2021级">2021级</option>
+              <option value="2020级">2020级</option>
+              <option value="2025届毕业生">2025届毕业生</option>
+              <option value="2026届毕业生">2026届毕业生</option>
+              <option value="2027届毕业生">2027届毕业生</option>
+              <option value="2028届毕业生">2028届毕业生</option>
+              <option value="2029届毕业生">2029届毕业生</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="detail">详情</label>
+            <input type="text" id="detail" placeholder="可填写补充说明、地点、重要备注等">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>时间类型 *</label>
+            <div class="time-type-toggle">
+              <label>
+                <input type="radio" name="timeType" value="activity" checked onchange="switchTimeType()">
+                活动日期（包含开始时间和结束时间）
+              </label>
+              <label>
+                <input type="radio" name="timeType" value="deadline" onchange="switchTimeType()">
+                截止日期（只有截止时间）
+              </label>
+            </div>
+            <div class="hint-text">在"活动日期"和"截止日期"中二选一进行设置。</div>
+          </div>
+        </div>
+
+        <!-- 活动时间设置 -->
+        <div class="form-row" id="activityTimeRow">
+          <div class="form-group full-width">
+            <label>活动时间</label>
+            <div class="time-row">
+              <div class="form-group">
+                <label for="activityDate">活动日期</label>
+                <input type="date" id="activityDate">
+              </div>
+              <div class="form-group">
+                <label for="activityStartTime">开始时间（小时:分钟）</label>
+                <input type="time" id="activityStartTime">
+              </div>
+              <div class="form-group">
+                <label for="activityEndTime">结束时间（小时:分钟）</label>
+                <input type="time" id="activityEndTime">
+              </div>
+            </div>
+            <div class="hint-text">示例：2025年1月日，开始 14:00，结束 16:00。</div>
+          </div>
+        </div>
+
+        <!-- 截止日期设置 -->
+        <div class="form-row" id="deadlineRow" style="display: none;">
+          <div class="form-group full-width">
+            <label>截止日期</label>
+            <div class="time-row">
+              <div class="form-group">
+                <label for="deadlineDate">截止日期</label>
+                <input type="date" id="deadlineDate">
+              </div>
+              <div class="form-group">
+                <label for="deadlineTime">截止时间（小时:分钟）</label>
+                <input type="time" id="deadlineTime">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="cancelForm()">取消</button>
+          <button class="btn btn-primary" id="submitBtn" onclick="submitTask()">确认</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div class="status-section-wrapper" id="statusWrapper">
+          <div class="status-section" id="sectionInProgress">
+            <div class="status-section-header in-progress">
+              <span>进行中</span>
+              <span class="status-count" id="countInProgress"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyInProgress"></tbody>
+            </table>
+          </div>
+
+          <div class="status-section" id="sectionNotStarted">
+            <div class="status-section-header not-started">
+              <span>未开始</span>
+              <span class="status-count" id="countNotStarted"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyNotStarted"></tbody>
+            </table>
+          </div>
+
+          <div class="status-section" id="sectionEnded">
+            <div class="status-section-header ended">
+              <span>已截止</span>
+              <span class="status-count" id="countEnded"></span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>事项</th>
+                  <th>面向对象</th>
+                  <th>时间类型</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyEnded"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <p>暂无事项，点击上方按钮添加事项</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
