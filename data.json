@@ -18,5 +18,15 @@
     "timeType": "deadline",
     "deadlineDate": "2025-12-16",
     "deadlineTime": "12:00"
+  },
+  {
+    "id": 1765275405433,
+    "createdAt": 1765275405433,
+    "event": "【研究生评奖评优】2025年浙江大学机械工程学院机械电子工程系企业奖学金评奖通知",
+    "target": "ALL",
+    "detail": "http://sklofp.zju.edu.cn/imce/2025/1209/c27876a3117241/page.htm",
+    "timeType": "deadline",
+    "deadlineDate": "2025-12-17",
+    "deadlineTime": "23:59"
   }
 ]
